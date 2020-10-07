@@ -6,13 +6,13 @@ import _ from 'lodash'
 import SimpleAccordion from "./SimpleAccordion";
 
 const columnData = [
-    'firstName', "lastName", "title", "gender"
+    'firstName', "lastName", "title", "gender",
 ]
 
 const rowData = []
 
 for (let i = 0; i < 100; i++) {
-    rowData.push({firstName: faker.name.firstName(), lastName: faker.name.lastName(), title: faker.name.title(), gender: faker.name.gender()})
+    rowData.push({firstName: faker.name.firstName(), lastName: faker.name.lastName(), title: faker.name.title(), gender: faker.name.gender(), nobility: faker.name.suffix()})
 }
 
 const groupRowData = (rowData, iteratee) => {
@@ -56,6 +56,7 @@ export default () => {
     const [groupedRowData, setGroupedRowData] = useState(initialGroupedData)
 
 
+
     console.log(groupedRowData)
 
     function onDragEnd(result) {
@@ -75,6 +76,7 @@ export default () => {
 
     return (
         <>
+            <button  onClick={()=> setColumnOrder([...columnOrder, "nobility"])}>add nobility</button>
             <DragDropContext onDragEnd={onDragEnd}>
                 <Droppable droppableId="droppable" direction="horizontal">
                     {(provided, snapshot) => (
