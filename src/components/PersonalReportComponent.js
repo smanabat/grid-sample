@@ -129,19 +129,23 @@ export default () => {
                         >
                             {columnOrder.map((columnName, index) => (
                                 <Draggable key={columnName} draggableId={columnName} index={index}>
-                                    {(provided, snapshot) => (
-                                        <div
+                                    {(provided, snapshot) =>
+                                        {
+                                            const flex = index === 0 ? '0 0 100px' : '1'
+                                            return <div
                                             ref={provided.innerRef}
                                             {...provided.draggableProps}
                                             {...provided.dragHandleProps}
-                                            style={getItemStyle(
+                                            style={{...getItemStyle(
                                                 snapshot.isDragging,
                                                 provided.draggableProps.style
-                                            )}
+                                            ), flex: flex, overflow: 'hidden'}}
                                         >
-                                            <h1 onClick={() => setSort(columnName)}>{columnName}</h1>
-                                        </div>
-                                    )}
+                                            <div style={{}}>
+                                                <h1 style={{minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'}}onClick={() => setSort(columnName)}>{columnName}</h1>
+                                            </div>
+                                        </div>}
+                                    }
                                 </Draggable>
                             ))}
                             {provided.placeholder}
