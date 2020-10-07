@@ -1,4 +1,4 @@
-import React, {useState} from "react";
+import React, {useEffect, useMemo, useState} from "react";
 import faker from 'faker'
 import {DragDropContext, Draggable, Droppable} from 'react-beautiful-dnd';
 import {getItems, getItemStyle, getListStyle, reorder} from "./DndExample";
@@ -9,17 +9,36 @@ const columnData = [
     'firstName', "lastName", "title", "gender",
 ]
 
-const rowData = []
+const initialRowData = []
 
-for (let i = 0; i < 100; i++) {
-    rowData.push({firstName: faker.name.firstName(), lastName: faker.name.lastName(), title: faker.name.title(), gender: faker.name.gender(), nobility: faker.name.suffix()})
+for (let i = 0; i < 1000; i++) {
+    initialRowData.push({firstName: faker.name.firstName(), lastName: faker.name.lastName(), title: faker.name.title(), gender: faker.name.gender(), nobility: faker.name.suffix()})
 }
 
 const groupRowData = (rowData, iteratee) => {
-    return _.groupBy(rowData, iteratee)
+    function sortObject(o) {
+        var sorted = {},
+            key, a = [];
+
+        for (key in o) {
+            if (o.hasOwnProperty(key)) {
+                a.push(key);
+            }
+        }
+
+        a.sort();
+
+        for (key = 0; key < a.length; key++) {
+            sorted[a[key]] = o[a[key]];
+        }
+        return sorted;
+    }
+
+    let groupBy = _.groupBy(rowData, iteratee);
+    return sortObject(groupBy)
 }
 
-const initialGroupedData = groupRowData(rowData, 'gender')
+const initialGroupedData = groupRowData(initialRowData, 'gender')
 
 function getRowDataDivs(columnOrder, rowData) {
     return rowData.map(row => {
@@ -33,7 +52,7 @@ function getRowDataDivs(columnOrder, rowData) {
     });
 }
 
-function plainTable(columnOrder) {
+function plainTable(columnOrder, rowData) {
     return <>
         {getRowDataDivs(columnOrder, rowData)}
     </>;
@@ -41,11 +60,11 @@ function plainTable(columnOrder) {
 
 function groupedTable(columnOrder, groupedRowData) {
     return Object.keys(groupedRowData).map((grouping) => {
-        return <SimpleAccordion title={grouping}>
-            <div style={{flexDirection: 'column', flex: 1}}>
-                {getRowDataDivs(columnOrder, groupedRowData[grouping])}
-            </div>
-        </SimpleAccordion>
+            return <SimpleAccordion title={grouping}>
+                <div style={{flexDirection: 'column', flex: 1}}>
+                    {getRowDataDivs(columnOrder, groupedRowData[grouping])}
+                </div>
+            </SimpleAccordion>
         }
     );
 }
@@ -53,11 +72,34 @@ function groupedTable(columnOrder, groupedRowData) {
 export default () => {
     const [columnOrder, setColumnOrder] = useState(columnData)
     const [items, setItems] = useState(getItems(6))
-    const [groupedRowData, setGroupedRowData] = useState(initialGroupedData)
+    const [rowData, setRowData] = useState(initialRowData)
+    const [sorting, setSorting] = useState('')
+    const [sortMethod, setSortMethod] = useState(true); // True = ASC, false = DESC
 
+    const setSort = (column) => {
+        if (column === sorting) {
+            setSortMethod(!sortMethod);
+        } else {
+            setSorting(column)
+            setSortMethod(true)
+        }
+    }
 
+    const groupedRowData = useMemo(() => groupRowData(rowData, 'gender')
+        , [rowData])
+    // onCLick sort setGroupedData
+    // useEffect(callback, [sortField, direction])
 
-    console.log(groupedRowData)
+    useEffect(() => {
+        let newRowData = _.sortBy(rowData, sorting)
+        if (!sortMethod){
+            newRowData = newRowData.reverse()
+        }
+        setRowData(newRowData)
+    }, [sorting, sortMethod])
+
+    // callback = () => map.sortby
+
 
     function onDragEnd(result) {
         // dropped outside the list
@@ -76,7 +118,7 @@ export default () => {
 
     return (
         <>
-            <button  onClick={()=> setColumnOrder([...columnOrder, "nobility"])}>add nobility</button>
+            <button onClick={() => setColumnOrder([...columnOrder, "nobility"])}>add nobility</button>
             <DragDropContext onDragEnd={onDragEnd}>
                 <Droppable droppableId="droppable" direction="horizontal">
                     {(provided, snapshot) => (
@@ -85,8 +127,8 @@ export default () => {
                             style={getListStyle(snapshot.isDraggingOver)}
                             {...provided.droppableProps}
                         >
-                            {columnOrder.map((item, index) => (
-                                <Draggable key={item} draggableId={item} index={index}>
+                            {columnOrder.map((columnName, index) => (
+                                <Draggable key={columnName} draggableId={columnName} index={index}>
                                     {(provided, snapshot) => (
                                         <div
                                             ref={provided.innerRef}
@@ -97,7 +139,7 @@ export default () => {
                                                 provided.draggableProps.style
                                             )}
                                         >
-                                            <h1>{item}</h1>
+                                            <h1 onClick={() => setSort(columnName)}>{columnName}</h1>
                                         </div>
                                     )}
                                 </Draggable>
@@ -108,8 +150,8 @@ export default () => {
                 </Droppable>
             </DragDropContext>
             <div>
-                {/*{plainTable(columnOrder)}*/}
-                {groupedTable(columnOrder,groupedRowData)}
+                {/*{plainTable(columnOrder, rowData}*/}
+                {groupedTable(columnOrder, groupedRowData)}
             </div>
         </>
     )
