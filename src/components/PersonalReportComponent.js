@@ -1,7 +1,9 @@
 import React, {useState} from "react";
 import faker from 'faker'
-import {DragDropContext, Droppable, Draggable} from 'react-beautiful-dnd';
-import {DndExample, getItems, getItemStyle, getListStyle, reorder} from "./DndExample";
+import {DragDropContext, Draggable, Droppable} from 'react-beautiful-dnd';
+import {getItems, getItemStyle, getListStyle, reorder} from "./DndExample";
+import _ from 'lodash'
+import SimpleAccordion from "./SimpleAccordion";
 
 const columnData = [
     'firstName', "lastName", "title", "gender"
@@ -13,10 +15,48 @@ for (let i = 0; i < 100; i++) {
     rowData.push({firstName: faker.name.firstName(), lastName: faker.name.lastName(), title: faker.name.title(), gender: faker.name.gender()})
 }
 
+const groupRowData = (rowData, iteratee) => {
+    return _.groupBy(rowData, iteratee)
+}
+
+const initialGroupedData = groupRowData(rowData, 'gender')
+
+function getRowDataDivs(columnOrder, rowData) {
+    return rowData.map(row => {
+        return <div style={{display: 'flex', flexDirection: 'row', justifyContent: 'space-around', flex: 1}}>
+            {columnOrder.map(field => {
+                return <div style={{border: '1px solid black', flex: 1}}>
+                    {row[field]}
+                </div>
+            })}
+        </div>
+    });
+}
+
+function plainTable(columnOrder) {
+    return <>
+        {getRowDataDivs(columnOrder, rowData)}
+    </>;
+}
+
+function groupedTable(columnOrder, groupedRowData) {
+    return Object.keys(groupedRowData).map((grouping) => {
+        return <SimpleAccordion title={grouping}>
+            <div style={{flexDirection: 'column', flex: 1}}>
+                {getRowDataDivs(columnOrder, groupedRowData[grouping])}
+            </div>
+        </SimpleAccordion>
+        }
+    );
+}
 
 export default () => {
     const [columnOrder, setColumnOrder] = useState(columnData)
     const [items, setItems] = useState(getItems(6))
+    const [groupedRowData, setGroupedRowData] = useState(initialGroupedData)
+
+
+    console.log(groupedRowData)
 
     function onDragEnd(result) {
         // dropped outside the list
@@ -35,9 +75,6 @@ export default () => {
 
     return (
         <>
-            <DndExample/>
-
-
             <DragDropContext onDragEnd={onDragEnd}>
                 <Droppable droppableId="droppable" direction="horizontal">
                     {(provided, snapshot) => (
@@ -58,7 +95,7 @@ export default () => {
                                                 provided.draggableProps.style
                                             )}
                                         >
-                                            {item}
+                                            <h1>{item}</h1>
                                         </div>
                                     )}
                                 </Draggable>
@@ -68,24 +105,9 @@ export default () => {
                     )}
                 </Droppable>
             </DragDropContext>
-
-            <div style={{display: 'flex', flexDirection: 'row', border: '1px solid red', justifyContent: 'space-around'}}>
-                {columnOrder.map(column => {
-                    return <div style={{border: '1px solid black', flex: 1}}>
-                        <h1>{column}</h1>
-                    </div>
-                })}
-            </div>
             <div>
-                {rowData.map(row => {
-                    return <div style={{display: 'flex', flexDirection: 'row', justifyContent: 'space-around'}}>
-                        {columnOrder.map(field => {
-                            return <div style={{border: '1px solid black', flex: 1}}>
-                                {row[field]}
-                            </div>
-                        })}
-                    </div>
-                })}
+                {/*{plainTable(columnOrder)}*/}
+                {groupedTable(columnOrder,groupedRowData)}
             </div>
         </>
     )
